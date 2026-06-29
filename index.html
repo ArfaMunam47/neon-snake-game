@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Neon Snake — a polished, browser-based Snake game built with vanilla JavaScript.">
+  <title>Neon Snake | Portfolio Game</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="ambient-bg" aria-hidden="true">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="grid-overlay"></div>
+  </div>
+
+  <main class="game-shell">
+    <header class="game-header">
+      <div class="brand">
+        <span class="brand-icon" aria-hidden="true">◈</span>
+        <div>
+          <h1>Neon Snake</h1>
+          <p class="tagline">Classic arcade, reimagined</p>
+        </div>
+      </div>
+    </header>
+
+    <section class="scoreboard" aria-label="Game statistics">
+      <div class="stat-card" id="scoreCard">
+        <span class="stat-label">Score</span>
+        <span class="score-row">
+          <span id="score" class="stat-value">0</span>
+          <span id="fireModeIcon" class="fire-mode-icon hidden" title="Fire Mode active!" aria-label="Fire Mode active">🔥</span>
+        </span>
+      </div>
+      <div class="stat-card stat-card--accent">
+        <span class="stat-label">Status</span>
+        <span id="gameStatus" class="stat-value stat-value--status">Ready</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Best</span>
+        <span id="highScore" class="stat-value">0</span>
+      </div>
+    </section>
+
+    <div class="board-wrapper">
+      <canvas id="gameCanvas" aria-label="Snake game board" role="img"></canvas>
+
+      <div id="overlay" class="overlay overlay--hidden" aria-live="polite">
+        <div class="overlay-card">
+          <div class="overlay-icon" id="overlayIcon" aria-hidden="true">▶</div>
+          <h2 id="overlayTitle">Ready to Play</h2>
+          <p id="overlayMessage">Use arrow keys or touch controls to guide the snake.</p>
+          <p id="overlayScore" class="overlay-score hidden"></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="action-bar">
+      <button id="startBtn" class="btn btn--primary" type="button">
+        <span class="btn-icon" aria-hidden="true">▶</span>
+        Start
+      </button>
+      <button id="pauseBtn" class="btn btn--secondary" type="button" disabled>
+        <span class="btn-icon" aria-hidden="true">❚❚</span>
+        Pause
+      </button>
+      <button id="restartBtn" class="btn btn--ghost" type="button">
+        <span class="btn-icon" aria-hidden="true">↺</span>
+        Restart
+      </button>
+    </div>
+
+    <div class="touch-controls" aria-label="Touch direction controls">
+      <button class="touch-btn touch-btn--up" data-direction="up" type="button" aria-label="Move up">▲</button>
+      <div class="touch-row">
+        <button class="touch-btn touch-btn--left" data-direction="left" type="button" aria-label="Move left">◀</button>
+        <button class="touch-btn touch-btn--down" data-direction="down" type="button" aria-label="Move down">▼</button>
+        <button class="touch-btn touch-btn--right" data-direction="right" type="button" aria-label="Move right">▶</button>
+      </div>
+    </div>
+
+    <footer class="game-footer">
+      <p class="hint">
+        <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> to move
+        <span class="hint-sep">·</span>
+        <kbd>Space</kbd> to pause
+      </p>
+      <button id="soundToggle" class="sound-toggle" type="button" aria-pressed="true" aria-label="Toggle sound">
+        <span class="sound-on">🔊</span>
+        <span class="sound-off hidden">🔇</span>
+      </button>
+    </footer>
+  </main>
+
+  <script type="module" src="js/game.js"></script>
+</body>
+</html>
