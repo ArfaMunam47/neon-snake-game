@@ -127,23 +127,36 @@ export class Renderer {
   }
 
   _drawTrailParticles() {
-    this.trailParticles = this.trailParticles.filter((p) => p.life > 0);
-
+    const remaining = [];
+  
     this.trailParticles.forEach((p) => {
       p.life -= 0.03;
-
+  
+      if (p.life <= 0) return;
+  
+      remaining.push(p);
+  
       this.ctx.save();
       this.ctx.globalAlpha = p.life * 0.75;
       this.ctx.fillStyle = FIRE_COLORS.trail;
       this.ctx.shadowColor = FIRE_COLORS.bodyGlow;
       this.ctx.shadowBlur = 12;
+  
       this.ctx.beginPath();
-      this.ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+      this.ctx.arc(
+        p.x,
+        p.y,
+        Math.max(0.1, p.size * p.life),
+        0,
+        Math.PI * 2
+      );
+  
       this.ctx.fill();
       this.ctx.restore();
     });
+  
+    this.trailParticles = remaining;
   }
-
   _drawSnake(segments, fireMode, direction) {
     const colors = fireMode ? FIRE_COLORS : COLORS;
 
@@ -231,27 +244,42 @@ export class Renderer {
   }
 
   _drawEffects() {
-    this.effects = this.effects.filter((fx) => fx.life > 0);
-
+    const remaining = [];
+  
     this.effects.forEach((fx) => {
       fx.x += fx.vx;
       fx.y += fx.vy;
+  
       fx.life -= 0.035;
       fx.vx *= 0.96;
       fx.vy *= 0.96;
-
+  
+      // Remove expired particles BEFORE drawing
+      if (fx.life <= 0) return;
+  
+      remaining.push(fx);
+  
       this.ctx.save();
       this.ctx.globalAlpha = fx.life;
       this.ctx.fillStyle = fx.color || COLORS.food;
       this.ctx.shadowColor = fx.color || COLORS.foodGlow;
       this.ctx.shadowBlur = 10;
+  
       this.ctx.beginPath();
-      this.ctx.arc(fx.x, fx.y, 3.5 * fx.life, 0, Math.PI * 2);
+      this.ctx.arc(
+        fx.x,
+        fx.y,
+        Math.max(0.1, 3.5 * fx.life),
+        0,
+        Math.PI * 2
+      );
+  
       this.ctx.fill();
       this.ctx.restore();
     });
+  
+    this.effects = remaining;
   }
-
   draw(state, previousSnake, progress, timestamp, fireMode = false) {
     this._drawBoardBackground();
     this._drawGrid();
