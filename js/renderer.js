@@ -28,15 +28,18 @@ export class Renderer {
   }
 
   addEatEffect(x, y) {
-    for (let i = 0; i < 8; i++) {
-      const angle = (Math.PI * 2 * i) / 8;
+    const cx = x * this.cellSize + this.cellSize / 2;
+    const cy = y * this.cellSize + this.cellSize / 2;
+
+    for (let i = 0; i < 12; i++) {
+      const angle = (Math.PI * 2 * i) / 12;
       this.effects.push({
-        x: x * this.cellSize + this.cellSize / 2,
-        y: y * this.cellSize + this.cellSize / 2,
-        vx: Math.cos(angle) * 2.5,
-        vy: Math.sin(angle) * 2.5,
+        x: cx,
+        y: cy,
+        vx: Math.cos(angle) * 3,
+        vy: Math.sin(angle) * 3,
         life: 1,
-        color: i % 2 === 0 ? COLORS.food : COLORS.snakeHead,
+        color: i % 3 === 0 ? COLORS.food : i % 3 === 1 ? COLORS.snakeHead : "#c084fc",
       });
     }
   }
@@ -45,21 +48,30 @@ export class Renderer {
     return a + (b - a) * t;
   }
 
-  /**
-   * Interpolate every segment, padding missing previous positions when the snake grows.
-   */
   _interpolateSnake(current, previous, progress) {
-    if (!previous || previous.length === 0) {
+    if (!previous?.length) {
       return current.map((seg) => ({ x: seg.x, y: seg.y }));
     }
+
+    const t = Math.max(0, Math.min(1, progress));
 
     return current.map((seg, i) => {
       const prev = previous[i] ?? previous[previous.length - 1] ?? seg;
       return {
-        x: this._lerp(prev.x, seg.x, progress),
-        y: this._lerp(prev.y, seg.y, progress),
+        x: this._lerp(prev.x, seg.x, t),
+        y: this._lerp(prev.y, seg.y, t),
       };
     });
+  }
+
+  _drawBoardBackground() {
+    const { ctx, canvas } = this;
+    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    gradient.addColorStop(0, "#0a1020");
+    gradient.addColorStop(0.5, COLORS.board);
+    gradient.addColorStop(1, "#0f0820");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
 
   _drawGrid() {
@@ -83,7 +95,7 @@ export class Renderer {
   _drawRoundedCell(px, py, size, color, glowColor, glowBlur) {
     const { ctx } = this;
     const pad = 1.5;
-    const r = size * 0.28;
+    const r = size * 0.32;
 
     ctx.save();
     ctx.shadowColor = glowColor;
@@ -101,15 +113,15 @@ export class Renderer {
     ctx.restore();
   }
 
-  _spawnTrailParticle(x, y, timestamp) {
+  _spawnTrailParticle(x, y) {
     this.trailParticles.push({
-      x: x * this.cellSize + this.cellSize / 2 + (Math.random() - 0.5) * 4,
-      y: y * this.cellSize + this.cellSize / 2 + (Math.random() - 0.5) * 4,
+      x: x * this.cellSize + this.cellSize / 2 + (Math.random() - 0.5) * 5,
+      y: y * this.cellSize + this.cellSize / 2 + (Math.random() - 0.5) * 5,
       life: 1,
-      size: 2 + Math.random() * 3,
+      size: 2 + Math.random() * 4,
     });
 
-    if (this.trailParticles.length > 40) {
+    if (this.trailParticles.length > 50) {
       this.trailParticles.shift();
     }
   }
@@ -118,13 +130,13 @@ export class Renderer {
     this.trailParticles = this.trailParticles.filter((p) => p.life > 0);
 
     this.trailParticles.forEach((p) => {
-      p.life -= 0.035;
+      p.life -= 0.03;
 
       this.ctx.save();
-      this.ctx.globalAlpha = p.life * 0.7;
+      this.ctx.globalAlpha = p.life * 0.75;
       this.ctx.fillStyle = FIRE_COLORS.trail;
       this.ctx.shadowColor = FIRE_COLORS.bodyGlow;
-      this.ctx.shadowBlur = 10;
+      this.ctx.shadowBlur = 12;
       this.ctx.beginPath();
       this.ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
       this.ctx.fill();
@@ -132,7 +144,7 @@ export class Renderer {
     });
   }
 
-  _drawSnake(segments, fireMode) {
+  _drawSnake(segments, fireMode, direction) {
     const colors = fireMode ? FIRE_COLORS : COLORS;
 
     segments.forEach((seg, index) => {
@@ -145,53 +157,76 @@ export class Renderer {
           px, py, this.cellSize,
           colors.snakeHead ?? colors.head,
           colors.snakeHeadGlow ?? colors.headGlow,
-          fireMode ? 20 : 14
+          fireMode ? 22 : 16
         );
 
         const cx = px + this.cellSize / 2;
         const cy = py + this.cellSize / 2;
-        const eyeOffset = this.cellSize * 0.18;
+        const eyeOffset = this.cellSize * 0.16;
+        let ex1 = cx - eyeOffset;
+        let ex2 = cx + eyeOffset;
+        let ey = cy - eyeOffset * 0.4;
+
+        if (direction === "left") { ex1 -= 2; ex2 -= 2; }
+        if (direction === "right") { ex1 += 2; ex2 += 2; }
+        if (direction === "up") { ey -= 2; }
+        if (direction === "down") { ey += 2; }
+
         this.ctx.fillStyle = "#070b14";
         this.ctx.beginPath();
-        this.ctx.arc(cx - eyeOffset, cy - eyeOffset * 0.5, 2, 0, Math.PI * 2);
-        this.ctx.arc(cx + eyeOffset, cy - eyeOffset * 0.5, 2, 0, Math.PI * 2);
+        this.ctx.arc(ex1, ey, 2.2, 0, Math.PI * 2);
+        this.ctx.arc(ex2, ey, 2.2, 0, Math.PI * 2);
         this.ctx.fill();
       } else {
-        const fade = 1 - (index / segments.length) * 0.35;
+        const fade = 1 - (index / segments.length) * 0.4;
         const bodyColor = fireMode
           ? `rgba(255, 107, 53, ${fade})`
-          : `rgba(0, 200, 122, ${fade})`;
+          : `rgba(0, 210, 160, ${fade})`;
         this._drawRoundedCell(
           px, py, this.cellSize,
           bodyColor,
           colors.snakeBodyGlow ?? colors.bodyGlow,
-          fireMode ? 10 : 6
+          fireMode ? 12 : 8
         );
       }
     });
   }
 
   _drawFood(food, timestamp) {
-    const pulse = 0.85 + Math.sin(timestamp / 200) * 0.15;
+    const pulse = 0.82 + Math.sin(timestamp / 180) * 0.18;
     const cx = food.x * this.cellSize + this.cellSize / 2;
     const cy = food.y * this.cellSize + this.cellSize / 2;
-    const baseRadius = (this.cellSize / 2 - 3) * pulse;
+    const outerRadius = (this.cellSize / 2 - 1) * pulse;
+    const innerRadius = outerRadius * 0.55;
 
     const { ctx } = this;
 
     ctx.save();
     ctx.shadowColor = COLORS.foodGlow;
-    ctx.shadowBlur = 18 * pulse;
+    ctx.shadowBlur = 22 * pulse;
 
-    const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, baseRadius);
-    gradient.addColorStop(0, COLORS.foodCore);
-    gradient.addColorStop(0.6, COLORS.food);
-    gradient.addColorStop(1, "rgba(255, 77, 109, 0.2)");
+    ctx.strokeStyle = COLORS.foodRing;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, outerRadius + 2, 0, Math.PI * 2);
+    ctx.stroke();
+
+    const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, outerRadius);
+    gradient.addColorStop(0, "#ffffff");
+    gradient.addColorStop(0.25, COLORS.foodCore);
+    gradient.addColorStop(0.65, COLORS.food);
+    gradient.addColorStop(1, "rgba(255, 61, 138, 0.15)");
 
     ctx.fillStyle = gradient;
     ctx.beginPath();
-    ctx.arc(cx, cy, baseRadius, 0, Math.PI * 2);
+    ctx.arc(cx, cy, outerRadius, 0, Math.PI * 2);
     ctx.fill();
+
+    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    ctx.beginPath();
+    ctx.arc(cx - innerRadius * 0.25, cy - innerRadius * 0.25, innerRadius * 0.35, 0, Math.PI * 2);
+    ctx.fill();
+
     ctx.restore();
   }
 
@@ -201,36 +236,35 @@ export class Renderer {
     this.effects.forEach((fx) => {
       fx.x += fx.vx;
       fx.y += fx.vy;
-      fx.life -= 0.04;
+      fx.life -= 0.035;
+      fx.vx *= 0.96;
+      fx.vy *= 0.96;
 
       this.ctx.save();
       this.ctx.globalAlpha = fx.life;
       this.ctx.fillStyle = fx.color || COLORS.food;
       this.ctx.shadowColor = fx.color || COLORS.foodGlow;
-      this.ctx.shadowBlur = 8;
+      this.ctx.shadowBlur = 10;
       this.ctx.beginPath();
-      this.ctx.arc(fx.x, fx.y, 3 * fx.life, 0, Math.PI * 2);
+      this.ctx.arc(fx.x, fx.y, 3.5 * fx.life, 0, Math.PI * 2);
       this.ctx.fill();
       this.ctx.restore();
     });
   }
 
   draw(state, previousSnake, progress, timestamp, fireMode = false) {
-    const { ctx, canvas } = this;
-
-    ctx.fillStyle = COLORS.board;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    this._drawBoardBackground();
     this._drawGrid();
 
     const interpolated = this._interpolateSnake(state.snake, previousSnake, progress);
 
     if (fireMode && interpolated.length > 0) {
       const tail = interpolated[interpolated.length - 1];
-      this._spawnTrailParticle(tail.x, tail.y, timestamp);
+      this._spawnTrailParticle(tail.x, tail.y);
       this._drawTrailParticles();
     }
 
-    this._drawSnake(interpolated, fireMode);
+    this._drawSnake(interpolated, fireMode, state.direction);
     this._drawFood(state.food, timestamp);
     this._drawEffects();
   }

@@ -32,8 +32,9 @@ export class InputController {
     this.onDirection(direction);
   }
 
-  setDirection(currentDirection, nextDirection, newDirection) {
-    if (OPPOSITE[currentDirection] !== newDirection) {
+  /** Block 180° turns using the queued direction, not the last rendered frame. */
+  setDirection(nextDirection, newDirection) {
+    if (OPPOSITE[nextDirection] !== newDirection) {
       return newDirection;
     }
     return nextDirection;

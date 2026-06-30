@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Neon Snake">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#12082a"/>
+      <stop offset="100%" stop-color="#071018"/>
+    </linearGradient>
+    <linearGradient id="snake" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00ffc8"/>
+      <stop offset="100%" stop-color="#00c896"/>
+    </linearGradient>
+    <radialGradient id="food" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="40%" stop-color="#ff8fc7"/>
+      <stop offset="100%" stop-color="#ff3d8a"/>
+    </radialGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+  <rect x="8" y="8" width="48" height="48" rx="10" fill="none" stroke="rgba(0,255,200,0.25)" stroke-width="1.5"/>
+  <circle cx="44" cy="20" r="6" fill="url(#food)"/>
+  <rect x="18" y="34" width="10" height="10" rx="3" fill="url(#snake)" opacity="0.85"/>
+  <rect x="28" y="34" width="10" height="10" rx="3" fill="url(#snake)" opacity="0.92"/>
+  <rect x="38" y="28" width="10" height="10" rx="3" fill="url(#snake)"/>
+  <circle cx="41" cy="31" r="1.2" fill="#071018"/>
+  <circle cx="45" cy="31" r="1.2" fill="#071018"/>
+</svg>

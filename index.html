@@ -4,10 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Neon Snake — a polished, browser-based Snake game built with vanilla JavaScript.">
-  <title>Neon Snake | Portfolio Game</title>
+  <meta name="theme-color" content="#12082a">
+  <title>Neon Snake | Arcade Game</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -15,16 +17,23 @@
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
     <div class="orb orb-3"></div>
+    <div class="orb orb-4"></div>
     <div class="grid-overlay"></div>
+    <div class="noise-overlay"></div>
   </div>
 
   <main class="game-shell">
+    <div class="shell-glow" aria-hidden="true"></div>
+
     <header class="game-header">
       <div class="brand">
-        <span class="brand-icon" aria-hidden="true">◈</span>
+        <div class="brand-badge" aria-hidden="true">
+          <span class="brand-snake">🐍</span>
+        </div>
         <div>
+          <p class="brand-kicker">Arcade Edition</p>
           <h1>Neon Snake</h1>
-          <p class="tagline">Classic arcade, reimagined</p>
+          <p class="tagline">Eat · Grow · Survive</p>
         </div>
       </div>
     </header>
@@ -41,37 +50,48 @@
         <span class="stat-label">Status</span>
         <span id="gameStatus" class="stat-value stat-value--status">Ready</span>
       </div>
-      <div class="stat-card">
+      <div class="stat-card stat-card--gold">
         <span class="stat-label">Best</span>
         <span id="highScore" class="stat-value">0</span>
       </div>
     </section>
 
     <div class="board-wrapper">
+      <div class="board-frame" aria-hidden="true"></div>
       <canvas id="gameCanvas" aria-label="Snake game board" role="img"></canvas>
 
       <div id="overlay" class="overlay overlay--hidden" aria-live="polite">
         <div class="overlay-card">
-          <div class="overlay-icon" id="overlayIcon" aria-hidden="true">▶</div>
+          <div class="overlay-icon-wrap">
+            <div class="overlay-icon" id="overlayIcon" aria-hidden="true">▶</div>
+          </div>
           <h2 id="overlayTitle">Ready to Play</h2>
           <p id="overlayMessage">Use arrow keys or touch controls to guide the snake.</p>
           <p id="overlayScore" class="overlay-score hidden"></p>
+          <button id="overlayBtn" class="btn btn--primary btn--overlay" type="button">Start Game</button>
         </div>
       </div>
     </div>
 
     <div class="action-bar">
       <button id="startBtn" class="btn btn--primary" type="button">
-        <span class="btn-icon" aria-hidden="true">▶</span>
-        Start
+        <span class="btn-shine"></span>
+        <span class="btn-content">
+          <span class="btn-icon" aria-hidden="true">▶</span>
+          Start
+        </span>
       </button>
       <button id="pauseBtn" class="btn btn--secondary" type="button" disabled>
-        <span class="btn-icon" aria-hidden="true">❚❚</span>
-        Pause
+        <span class="btn-content">
+          <span class="btn-icon" aria-hidden="true">❚❚</span>
+          Pause
+        </span>
       </button>
       <button id="restartBtn" class="btn btn--ghost" type="button">
-        <span class="btn-icon" aria-hidden="true">↺</span>
-        Restart
+        <span class="btn-content">
+          <span class="btn-icon" aria-hidden="true">↺</span>
+          Restart
+        </span>
       </button>
     </div>
 
@@ -86,9 +106,9 @@
 
     <footer class="game-footer">
       <p class="hint">
-        <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> to move
+        <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> move
         <span class="hint-sep">·</span>
-        <kbd>Space</kbd> to pause
+        <kbd>Space</kbd> pause
       </p>
       <button id="soundToggle" class="sound-toggle" type="button" aria-pressed="true" aria-label="Toggle sound">
         <span class="sound-on">🔊</span>

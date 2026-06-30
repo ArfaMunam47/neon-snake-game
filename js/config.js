@@ -4,15 +4,16 @@ export const MAX_CELL_SIZE = 22;
 export const MIN_CELL_SIZE = 14;
 
 export const COLORS = {
-  board: "#0a1020",
-  gridLine: "rgba(255, 255, 255, 0.03)",
-  snakeHead: "#00f5a0",
-  snakeHeadGlow: "rgba(0, 245, 160, 0.6)",
-  snakeBody: "#00c87a",
-  snakeBodyGlow: "rgba(0, 200, 122, 0.35)",
-  food: "#ff4d6d",
-  foodGlow: "rgba(255, 77, 109, 0.65)",
-  foodCore: "#ff8fa3",
+  board: "#080d1a",
+  gridLine: "rgba(147, 112, 255, 0.06)",
+  snakeHead: "#00ffc8",
+  snakeHeadGlow: "rgba(0, 255, 200, 0.75)",
+  snakeBody: "#00c896",
+  snakeBodyGlow: "rgba(0, 200, 150, 0.45)",
+  food: "#ff3d8a",
+  foodGlow: "rgba(255, 61, 138, 0.75)",
+  foodCore: "#ff8fc7",
+  foodRing: "rgba(255, 140, 200, 0.35)",
 };
 
 export const OPPOSITE = {
@@ -47,28 +48,32 @@ export const GAME_STATUS = {
 
 export const OVERLAY_CONTENT = {
   ready: {
-    icon: "▶",
-    title: "Ready to Play",
-    message: "Press Start and guide the snake to glowing food. Avoid walls and yourself!",
-    className: "",
+    icon: "🐍",
+    title: "Ready to Slither",
+    message: "Collect glowing orbs, grow long, and chase your high score. Arrow keys or touch to move.",
+    className: "overlay--ready",
+    btnLabel: "Start Game",
   },
   paused: {
-    icon: "❚❚",
-    title: "Paused",
-    message: "Take a breath. Press Resume or Space to continue.",
-    className: "",
+    icon: "⏸",
+    title: "Game Paused",
+    message: "Catch your breath — press Resume or Space to keep going.",
+    className: "overlay--paused",
+    btnLabel: "Resume",
   },
   gameover: {
-    icon: "✕",
+    icon: "💀",
     title: "Game Over",
-    message: "The neon trail ends here. Can you beat your best score?",
+    message: "Your neon trail ends here. Think you can beat your best?",
     className: "overlay--gameover",
+    btnLabel: "Play Again",
   },
   victory: {
-    icon: "★",
+    icon: "👑",
     title: "Victory!",
-    message: "You filled the entire board. Absolute snake mastery!",
+    message: "You conquered the entire grid. Absolute snake legend.",
     className: "overlay--victory",
+    btnLabel: "Play Again",
   },
 };
 
@@ -76,9 +81,9 @@ export const HIGH_SCORE_KEY = "neonSnakeHighScore";
 export const FIRE_MODE_SCORE = 10;
 
 export const FIRE_COLORS = {
-  head: "#ff9a3c",
-  headGlow: "rgba(255, 154, 60, 0.75)",
+  head: "#ffb347",
+  headGlow: "rgba(255, 179, 71, 0.85)",
   body: "#ff6b35",
-  bodyGlow: "rgba(255, 107, 53, 0.5)",
-  trail: "#ff4d00",
+  bodyGlow: "rgba(255, 107, 53, 0.6)",
+  trail: "#ff4500",
 };

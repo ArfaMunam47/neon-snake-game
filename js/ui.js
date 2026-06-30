@@ -12,6 +12,7 @@ export class UIController {
       overlayTitle: document.getElementById("overlayTitle"),
       overlayMessage: document.getElementById("overlayMessage"),
       overlayScore: document.getElementById("overlayScore"),
+      overlayBtn: document.getElementById("overlayBtn"),
       startBtn: document.getElementById("startBtn"),
       pauseBtn: document.getElementById("pauseBtn"),
       restartBtn: document.getElementById("restartBtn"),
@@ -32,13 +33,15 @@ export class UIController {
     if (!this.els.scoreCard) return;
 
     this.els.scoreCard.classList.remove("score-pop");
-    void this.els.scoreCard.offsetWidth;
-    this.els.scoreCard.classList.add("score-pop");
+    requestAnimationFrame(() => {
+      this.els.scoreCard.classList.add("score-pop");
+    });
   }
 
   setFireMode(active) {
     if (!this.els.fireModeIcon) return;
     this.els.fireModeIcon.classList.toggle("hidden", !active);
+    this.els.scoreCard?.classList.toggle("stat-card--fire", active);
   }
 
   setHighScore(score) {
@@ -59,6 +62,7 @@ export class UIController {
     el.textContent = labels[status] || status;
     el.classList.toggle("is-danger", status === GAME_STATUS.GAME_OVER);
     el.classList.toggle("is-gold", status === GAME_STATUS.VICTORY);
+    el.classList.toggle("is-live", status === GAME_STATUS.PLAYING);
   }
 
   showOverlay(type, extra = {}) {
@@ -73,6 +77,14 @@ export class UIController {
     this.els.overlayIcon.textContent = content.icon;
     this.els.overlayTitle.textContent = content.title;
     this.els.overlayMessage.textContent = content.message;
+
+    if (this.els.overlayBtn) {
+      this.els.overlayBtn.textContent = content.btnLabel || "Continue";
+      this.els.overlayBtn.classList.toggle(
+        "hidden",
+        type === GAME_STATUS.PLAYING
+      );
+    }
 
     if (extra.score !== undefined) {
       this.els.overlayScore.textContent = `Final Score: ${extra.score}`;
@@ -100,28 +112,28 @@ export class UIController {
     switch (status) {
       case GAME_STATUS.READY:
         startBtn.disabled = false;
-        startBtn.innerHTML = '<span class="btn-icon" aria-hidden="true">▶</span> Start';
+        startBtn.innerHTML = '<span class="btn-shine"></span><span class="btn-content"><span class="btn-icon" aria-hidden="true">▶</span> Start</span>';
         pauseBtn.disabled = true;
-        pauseBtn.innerHTML = '<span class="btn-icon" aria-hidden="true">❚❚</span> Pause';
+        pauseBtn.innerHTML = '<span class="btn-content"><span class="btn-icon" aria-hidden="true">❚❚</span> Pause</span>';
         break;
 
       case GAME_STATUS.PLAYING:
         startBtn.disabled = true;
         pauseBtn.disabled = false;
-        pauseBtn.innerHTML = '<span class="btn-icon" aria-hidden="true">❚❚</span> Pause';
+        pauseBtn.innerHTML = '<span class="btn-content"><span class="btn-icon" aria-hidden="true">❚❚</span> Pause</span>';
         restartBtn.disabled = false;
         break;
 
       case GAME_STATUS.PAUSED:
         startBtn.disabled = false;
-        startBtn.innerHTML = '<span class="btn-icon" aria-hidden="true">▶</span> Resume';
+        startBtn.innerHTML = '<span class="btn-shine"></span><span class="btn-content"><span class="btn-icon" aria-hidden="true">▶</span> Resume</span>';
         pauseBtn.disabled = true;
         break;
 
       case GAME_STATUS.GAME_OVER:
       case GAME_STATUS.VICTORY:
         startBtn.disabled = false;
-        startBtn.innerHTML = '<span class="btn-icon" aria-hidden="true">▶</span> Play Again';
+        startBtn.innerHTML = '<span class="btn-shine"></span><span class="btn-content"><span class="btn-icon" aria-hidden="true">▶</span> Play Again</span>';
         pauseBtn.disabled = true;
         restartBtn.disabled = false;
         break;

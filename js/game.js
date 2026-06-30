@@ -17,14 +17,14 @@ class SnakeGame {
     );
 
     this.status = GAME_STATUS.READY;
-    this.lastTickTime = 0;
+    this.accumulator = 0;
+    this.lastFrameTime = 0;
     this.previousSnake = null;
-    this.rafId = null;
 
     this.state = this.createInitialState();
     this.spawnFood();
     this.bindUI();
-    this.renderer.draw(this.state, null, 1, performance.now(), false);
+    this.renderer.draw(this.state, null, 0, performance.now(), false);
     this.startLoop();
   }
 
@@ -44,35 +44,35 @@ class SnakeGame {
   }
 
   bindUI() {
-    this.ui.els.startBtn.addEventListener("click", () => {
-      if (this.status === GAME_STATUS.PLAYING) return;
-
-      if (this.status === GAME_STATUS.PAUSED) {
-        this.resume();
-      } else if (
-        this.status === GAME_STATUS.GAME_OVER ||
-        this.status === GAME_STATUS.VICTORY
-      ) {
-        this.reset();
-        this.start();
-      } else {
-        this.start();
-      }
-    });
-
+    this.ui.els.startBtn.addEventListener("click", () => this.handlePrimaryAction());
+    this.ui.els.overlayBtn.addEventListener("click", () => this.handlePrimaryAction());
     this.ui.els.pauseBtn.addEventListener("click", () => this.togglePause());
-
     this.ui.els.restartBtn.addEventListener("click", () => {
       this.reset();
       this.ui.hideOverlay();
       this.ui.showOverlay("ready");
     });
-
     this.ui.els.soundToggle.addEventListener("click", () => {
       const enabled = this.sound.toggle();
       this.ui.setSoundEnabled(enabled);
       if (enabled) this.sound.play("start");
     });
+  }
+
+  handlePrimaryAction() {
+    if (this.status === GAME_STATUS.PLAYING) return;
+
+    if (this.status === GAME_STATUS.PAUSED) {
+      this.resume();
+    } else if (
+      this.status === GAME_STATUS.GAME_OVER ||
+      this.status === GAME_STATUS.VICTORY
+    ) {
+      this.reset();
+      this.start();
+    } else {
+      this.start();
+    }
   }
 
   isSamePosition(a, b) {
@@ -84,13 +84,19 @@ class SnakeGame {
   }
 
   spawnFood() {
+    const maxCells = GRID_SIZE * GRID_SIZE;
+    if (this.state.snake.length >= maxCells) return;
+
     let newFood;
+    let attempts = 0;
     do {
       newFood = {
         x: Math.floor(Math.random() * GRID_SIZE),
         y: Math.floor(Math.random() * GRID_SIZE),
       };
-    } while (this.isOnSnake(newFood));
+      attempts += 1;
+    } while (this.isOnSnake(newFood) && attempts < maxCells);
+
     this.state.food = newFood;
   }
 
@@ -98,24 +104,19 @@ class SnakeGame {
     return this.state.snake.map((s) => ({ x: s.x, y: s.y }));
   }
 
-  /**
-   * After the snake grows, extend previousSnake so it matches current length.
-   * The new segment's prior position is the old tail cell (where it appeared).
-   */
-  padPreviousSnakeAfterGrowth() {
-    if (!this.previousSnake) return;
-
-    while (this.previousSnake.length < this.state.snake.length) {
-      const tail = this.previousSnake[this.previousSnake.length - 1];
-      this.previousSnake.push({ x: tail.x, y: tail.y });
-    }
+  /** Build a pre-step snapshot; extend it when the snake grows so interpolation never breaks. */
+  extendSnapshotForGrowth(snapshot) {
+    const tail = snapshot[snapshot.length - 1];
+    snapshot.push({ x: tail.x, y: tail.y });
+    return snapshot;
   }
 
   reset() {
     this.state = this.createInitialState();
     this.spawnFood();
     this.previousSnake = null;
-    this.lastTickTime = 0;
+    this.accumulator = 0;
+    this.lastFrameTime = 0;
     this.status = GAME_STATUS.READY;
     this.renderer.clearTrails();
     this.ui.setScore(0);
@@ -128,7 +129,8 @@ class SnakeGame {
 
   start() {
     this.status = GAME_STATUS.PLAYING;
-    this.lastTickTime = performance.now();
+    this.accumulator = 0;
+    this.lastFrameTime = 0;
     this.previousSnake = this.snapSnake();
     this.ui.hideOverlay();
     this.ui.setStatus(GAME_STATUS.PLAYING);
@@ -139,6 +141,7 @@ class SnakeGame {
   togglePause() {
     if (this.status === GAME_STATUS.PLAYING) {
       this.status = GAME_STATUS.PAUSED;
+      this.accumulator = 0;
       this.ui.setStatus(GAME_STATUS.PAUSED);
       this.ui.updateButtons(GAME_STATUS.PAUSED);
       this.ui.revealOverlay();
@@ -151,7 +154,8 @@ class SnakeGame {
 
   resume() {
     this.status = GAME_STATUS.PLAYING;
-    this.lastTickTime = performance.now();
+    this.accumulator = 0;
+    this.lastFrameTime = 0;
     this.previousSnake = this.snapSnake();
     this.ui.hideOverlay();
     this.ui.setStatus(GAME_STATUS.PLAYING);
@@ -163,7 +167,6 @@ class SnakeGame {
     if (this.status !== GAME_STATUS.PLAYING) return;
 
     this.state.nextDirection = this.input.setDirection(
-      this.state.direction,
       this.state.nextDirection,
       direction
     );
@@ -188,15 +191,16 @@ class SnakeGame {
     return head.x < 0 || head.x >= GRID_SIZE || head.y < 0 || head.y >= GRID_SIZE;
   }
 
-  /**
-   * When the snake won't eat, the tail moves away — exclude it from collision.
-   */
   isSelfCollision(head, willEat) {
     const body = willEat ? this.state.snake : this.state.snake.slice(0, -1);
     return body.some((seg) => this.isSamePosition(seg, head));
   }
 
-  tick() {
+  /**
+   * Pure movement step — no DOM or audio side effects.
+   * Returns false when the run should stop (game over / victory).
+   */
+  step() {
     this.state.direction = this.state.nextDirection;
     const newHead = this.getNewHead();
     const willEat = this.isSamePosition(newHead, this.state.food);
@@ -206,44 +210,48 @@ class SnakeGame {
       return false;
     }
 
-    const snakeLengthBefore = this.state.snake.length;
     this.state.snake.unshift(newHead);
 
     if (willEat) {
       this.state.score += 1;
-      this.ui.setScore(this.state.score);
-      this.ui.setFireMode(this.isFireMode());
-      this.renderer.addEatEffect(this.state.food.x, this.state.food.y);
-      this.sound.play("eat");
+      const eatenFood = { x: this.state.food.x, y: this.state.food.y };
 
       if (this.state.snake.length >= GRID_SIZE * GRID_SIZE) {
+        this.onFoodEaten(eatenFood);
         this.endGame(GAME_STATUS.VICTORY);
         return false;
       }
 
       this.spawnFood();
+      this.onFoodEaten(eatenFood);
     } else {
       this.state.snake.pop();
-    }
-
-    if (this.state.snake.length > snakeLengthBefore) {
-      this.padPreviousSnakeAfterGrowth();
     }
 
     return true;
   }
 
+  /** Side effects decoupled from the simulation tick so layout/audio never block the loop. */
+  onFoodEaten(food) {
+    this.renderer.addEatEffect(food.x, food.y);
+    this.sound.play("eat");
+
+    requestAnimationFrame(() => {
+      this.ui.setScore(this.state.score);
+      this.ui.setFireMode(this.isFireMode());
+    });
+  }
+
   endGame(status) {
     this.status = status;
+    this.accumulator = 0;
     const best = saveHighScore(this.state.score);
     this.ui.setHighScore(Math.max(best, getHighScore()));
 
     this.ui.setStatus(status);
     this.ui.updateButtons(status);
     this.ui.revealOverlay();
-
-    const overlayType = status === GAME_STATUS.VICTORY ? "victory" : "gameover";
-    this.ui.showOverlay(overlayType, {
+    this.ui.showOverlay(status === GAME_STATUS.VICTORY ? "victory" : "gameover", {
       score: this.state.score,
       highScore: this.ui.highScore,
     });
@@ -253,21 +261,34 @@ class SnakeGame {
 
   startLoop() {
     const loop = (timestamp) => {
-      if (this.status === GAME_STATUS.PLAYING) {
-        if (!this.lastTickTime) this.lastTickTime = timestamp;
+      if (!this.lastFrameTime) this.lastFrameTime = timestamp;
+      const frameDelta = Math.min(timestamp - this.lastFrameTime, 250);
+      this.lastFrameTime = timestamp;
 
-        while (timestamp - this.lastTickTime >= TICK_MS) {
-          this.previousSnake = this.snapSnake();
-          const stillPlaying = this.tick();
-          this.lastTickTime += TICK_MS;
+      if (this.status === GAME_STATUS.PLAYING) {
+        this.accumulator += frameDelta;
+
+        while (this.accumulator >= TICK_MS) {
+          let snapshot = this.snapSnake();
+          const lengthBefore = this.state.snake.length;
+          const stillPlaying = this.step();
+
+          if (this.state.snake.length > lengthBefore) {
+            snapshot = this.extendSnapshotForGrowth(snapshot);
+          }
+
+          this.previousSnake = snapshot;
+          this.accumulator -= TICK_MS;
 
           if (!stillPlaying || this.status !== GAME_STATUS.PLAYING) break;
         }
+      } else {
+        this.accumulator = 0;
       }
 
       const progress =
         this.status === GAME_STATUS.PLAYING
-          ? Math.min((timestamp - this.lastTickTime) / TICK_MS, 1)
+          ? Math.min(this.accumulator / TICK_MS, 1)
           : 1;
 
       this.renderer.draw(
@@ -278,10 +299,10 @@ class SnakeGame {
         this.isFireMode()
       );
 
-      this.rafId = requestAnimationFrame(loop);
+      requestAnimationFrame(loop);
     };
 
-    this.rafId = requestAnimationFrame(loop);
+    requestAnimationFrame(loop);
   }
 }
 
